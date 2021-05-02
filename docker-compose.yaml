@@ -1,0 +1,38 @@
+version: '3.7'
+
+services:
+  local-db:
+    image: postgres:12.1
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  redis:
+    image: redis
+    volumes:
+      - redis_data:/var/lib/redis/data
+    depends_on:
+      - local-db
+
+  web:
+    build:
+      context: ./app
+      target: Builder
+    stdin_open: true
+    tty: true
+    command: docker/entrypoint.sh
+    environment:
+      - RAILS_ENV=development
+      - RAILS_DB_HOST=local-db
+      - REDIS_URL=redis://redis:6379/12
+    volumes:
+      - ./app:/usr/src
+    ports:
+      - 3000:3000
+    depends_on:
+      - local-db
+
+volumes:
+  db_data: {}
+  redis_data: {}

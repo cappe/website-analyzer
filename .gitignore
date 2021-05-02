@@ -1,0 +1,9 @@
+/geojson/
+/db/
+/app/.idea/
+/.idea/
+.DS_Store
+/backups/
+sitemap*.txt
+sitemap.xml
+/sitemaps/
