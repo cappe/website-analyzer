@@ -7,3 +7,5 @@
 sitemap*.txt
 sitemap.xml
 /sitemaps/
+
+/app/reports/

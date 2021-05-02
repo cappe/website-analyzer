@@ -25,7 +25,7 @@ WORKDIR /usr/src
 
 # Set the gemfile and install
 COPY Gemfile* ./
-RUN bundle install --jobs=5 --retry=5
+RUN bundle install --jobs=10 --retry=5
 
 # Copy the main application.
 COPY . ./
