@@ -12,6 +12,7 @@ class LighthouseReporter
 
     HEADER_ROW = 0
     URL_COL = 0
+    ERROR_COL = 7
     OK_FONT_COLOR = '0C5100'
     OK_BG_COLOR = 'BDEDC4'
     SATISFACTORY_FONT_COLOR = '8A4504'
@@ -22,6 +23,9 @@ class LighthouseReporter
     OK_THRESHOLD = 0.9
     DEFAULT_COL_WIDTH = 16
 
+    CLS_GOOD_THRESHOLD = 0.1
+    CLS_SATISFACTORY_THRESHOLD = 0.15
+
     def initialize(source_path:, dest_path:)
       self.workbook = RubyXL::Workbook.new
       self.worksheet = workbook[0]
@@ -29,8 +33,25 @@ class LighthouseReporter
       self.dest_path = dest_path
     end
 
+    def summary_json_path
+      "#{self.source_path}/summary.json"
+    end
+
+    def page_summary_json_path(page)
+      "#{self.source_path}/#{page}"
+    end
+
+
+    # Caches queries by parameter (page)
+    def page_summary_json(page)
+      @page_summaries ||= Hash.new do |h, key|
+        h[key] = JSON.parse(File.read(key))
+      end
+      @page_summaries[page_summary_json_path(page)]
+    end
+
     def rows
-      @rows ||= JSON.parse(File.read(self.source_path))
+      @rows ||= JSON.parse(File.read(self.summary_json_path))
     end
 
     def write_header
@@ -40,12 +61,14 @@ class LighthouseReporter
       worksheet.add_cell(HEADER_ROW, 3, 'Best Practices')
       worksheet.add_cell(HEADER_ROW, 4, 'SEO')
       worksheet.add_cell(HEADER_ROW, 5, 'PWA')
+      worksheet.add_cell(HEADER_ROW, 6, 'CLS')
 
       worksheet.change_column_width(1, DEFAULT_COL_WIDTH)
       worksheet.change_column_width(2, DEFAULT_COL_WIDTH)
       worksheet.change_column_width(3, DEFAULT_COL_WIDTH)
       worksheet.change_column_width(4, DEFAULT_COL_WIDTH)
       worksheet.change_column_width(5, DEFAULT_COL_WIDTH)
+      worksheet.change_column_width(6, DEFAULT_COL_WIDTH)
 
       worksheet[HEADER_ROW][0].change_font_bold(true)
       worksheet[HEADER_ROW][1].change_font_bold(true)
@@ -53,6 +76,23 @@ class LighthouseReporter
       worksheet[HEADER_ROW][3].change_font_bold(true)
       worksheet[HEADER_ROW][4].change_font_bold(true)
       worksheet[HEADER_ROW][5].change_font_bold(true)
+      worksheet[HEADER_ROW][6].change_font_bold(true)
+    end
+
+    # Good - nothing to do here = CLS of 0.1 or less.
+    # OK, but consider improvement = CLS between 0.1 and 0.15.
+    # Longer than recommended = CLS between 0.15 and 0.25.
+    # Much longer than recommended = CLS of 0.25 or higher .
+    def get_cls_bg_color(v)
+      return OK_BG_COLOR if v <= CLS_GOOD_THRESHOLD
+      return SATISFACTORY_BG_COLOR if v <= CLS_SATISFACTORY_THRESHOLD
+      UNACCEPTABLE_BG_COLOR
+    end
+
+    def get_cls_font_color(v)
+      return OK_FONT_COLOR if v <= CLS_GOOD_THRESHOLD
+      return SATISFACTORY_FONT_COLOR if v <= CLS_SATISFACTORY_THRESHOLD
+      UNACCEPTABLE_FONT_COLOR
     end
 
     def get_bg_color(v)
@@ -76,27 +116,23 @@ class LighthouseReporter
         worksheet.add_cell(row, URL_COL, page['url'])
 
         begin
-          detail = page['detail']
-          performance = detail['performance']
-          accessibility = detail['accessibility']
-          best_practices = detail['best-practices']
-          seo = detail['seo']
-          pwa = detail['pwa']
-        rescue
+          metrics = page['detail']
+          performance = metrics['performance']
+          accessibility = metrics['accessibility']
+          best_practices = metrics['best-practices']
+          seo = metrics['seo']
+          pwa = metrics['pwa']
+
+          page_summary = page_summary_json(page['file'])
+          cls = page_summary['audits']['cumulative-layout-shift']['displayValue'].to_f
+          # byebug
+        rescue Exception => e
+          byebug
           puts "error: #{page['url']}".red
 
-          worksheet.add_cell(row, 6, 'error')
+          worksheet.add_cell(row, ERROR_COL, 'error')
 
           next
-
-          # error: https://bonusetu.com/kasinobonuksien-kierratysehdot/
-          # error: https://bonusetu.com/rahapelimarkkinoiden-vapautuminen-ruotsissa-2019/
-          # error: https://bonusetu.com/em2020-vip-liput/
-          # error: https://bonusetu.com/mobiilikasinot/
-          # error: https://bonusetu.com/arvostelut/pronto-casino/
-          # error: https://bonusetu.com/arvostelut/n1-casino/
-          # error: https://bonusetu.com/arvostelut/rocket-casino/
-          # error: https://bonusetu.com/arvostelut/nopeampi/
         end
 
         worksheet.add_cell(row, 1, performance)
@@ -118,6 +154,10 @@ class LighthouseReporter
         worksheet.add_cell(row, 5, pwa)
         worksheet[row][5].change_fill(get_bg_color(pwa))
         worksheet[row][5].change_font_color(get_font_color(pwa))
+
+        worksheet.add_cell(row, 6, cls)
+        worksheet[row][6].change_fill(get_cls_bg_color(cls))
+        worksheet[row][6].change_font_color(get_cls_font_color(cls))
 
         # Auto-resize URL col
         url_cell_content = worksheet[row][URL_COL]&.value

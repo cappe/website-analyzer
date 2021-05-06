@@ -24,7 +24,8 @@ class LighthouseReporter
 
       raise "exit #{exit_code}" unless exit_code == 0
 
-      "#{self.dest_path}/summary.json"
+      # "#{self.dest_path}/summary.json"
+      self.dest_path
     end
   end
 end
