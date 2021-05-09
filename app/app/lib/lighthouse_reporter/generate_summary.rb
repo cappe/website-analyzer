@@ -96,12 +96,14 @@ class LighthouseReporter
     end
 
     def get_bg_color(v)
+      return UNACCEPTABLE_BG_COLOR unless v
       return UNACCEPTABLE_BG_COLOR if v < SATISFACTORY_THRESHOLD
       return SATISFACTORY_BG_COLOR if v < OK_THRESHOLD
       OK_BG_COLOR
     end
 
     def get_font_color(v)
+      return UNACCEPTABLE_BG_COLOR unless v
       return UNACCEPTABLE_FONT_COLOR if v < SATISFACTORY_THRESHOLD
       return SATISFACTORY_FONT_COLOR if v < OK_THRESHOLD
       OK_FONT_COLOR
@@ -127,7 +129,6 @@ class LighthouseReporter
           cls = page_summary['audits']['cumulative-layout-shift']['displayValue'].to_f
           # byebug
         rescue Exception => e
-          byebug
           puts "error: #{page['url']}".red
 
           worksheet.add_cell(row, ERROR_COL, 'error')
