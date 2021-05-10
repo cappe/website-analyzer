@@ -171,7 +171,8 @@ class LighthouseReporter
     end
 
     def export
-      workbook.write("#{self.dest_path}/summary.xlsx")
+      now = DateTime.now.strftime('%d_%m_%Y_klo_%H:%M')
+      workbook.write("#{self.dest_path}/summary_#{now}.xlsx")
     end
 
     def call
