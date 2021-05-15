@@ -14,9 +14,13 @@ namespace :analyzer do
       exit
     end
 
-    LighthouseReporter.call(
+    runner = LighthouseReporter::ConcurrentRunner.new(
       url: url,
       website: name
+    )
+
+    LighthouseReporter.call(
+      runner: runner
     )
   end
 end

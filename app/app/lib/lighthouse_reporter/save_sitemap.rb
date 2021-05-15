@@ -5,11 +5,15 @@ class LighthouseReporter
     include Callable
 
     attr_accessor :url,
-                  :dest_path
+                  :root_dir,
+                  :sitemap_writer
 
-    def initialize(url:, dest_path:)
+    def initialize(url:, root_dir:, sitemap_format:)
       self.url = url
-      self.dest_path = dest_path
+      self.root_dir = root_dir
+      self.sitemap_writer = LighthouseReporter
+                              .const_get("SitemapAs#{sitemap_format.to_s.camelcase}")
+                              .new(root_dir: root_dir)
     end
 
     def index_sitemap
@@ -22,10 +26,6 @@ class LighthouseReporter
       end
     end
 
-    def dest
-      "#{dest_path}/sitemap.txt"
-    end
-
     def call
       page_urls = sitemaps.map do |sitemap_url|
         sitemap_doc = Nokogiri::HTML(open(sitemap_url))
@@ -34,9 +34,7 @@ class LighthouseReporter
         end
       end.flatten
 
-      File.open(dest, 'w') { |f| f.puts(page_urls) }
-
-      dest
+      self.sitemap_writer.write page_urls
     end
   end
 end

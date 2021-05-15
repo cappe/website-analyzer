@@ -2,13 +2,13 @@ require 'rubyXL'
 require 'rubyXL/convenience_methods'
 
 class LighthouseReporter
-  class GenerateSummary
+  class WriteConcurrentSummaryReport
     include Callable
 
     attr_accessor :workbook,
                   :worksheet,
-                  :source_path,
-                  :dest_path
+                  :root_dir,
+                  :reports_dir
 
     HEADER_ROW = 0
     URL_COL = 0
@@ -26,21 +26,20 @@ class LighthouseReporter
     CLS_GOOD_THRESHOLD = 0.1
     CLS_SATISFACTORY_THRESHOLD = 0.15
 
-    def initialize(source_path:, dest_path:)
+    def initialize(root_dir:, reports_dir:)
       self.workbook = RubyXL::Workbook.new
       self.worksheet = workbook[0]
-      self.source_path = source_path
-      self.dest_path = dest_path
+      self.root_dir = root_dir
+      self.reports_dir = reports_dir
     end
 
     def summary_json_path
-      "#{self.source_path}/summary.json"
+      "#{self.reports_dir}/summary.json"
     end
 
     def page_summary_json_path(page)
-      "#{self.source_path}/#{page}"
+      "#{self.reports_dir}/#{page}"
     end
-
 
     # Caches queries by parameter (page)
     def page_summary_json(page)
@@ -172,7 +171,7 @@ class LighthouseReporter
 
     def export
       now = DateTime.now.strftime('%d_%m_%Y_klo_%H:%M')
-      workbook.write("#{self.dest_path}/summary_#{now}.xlsx")
+      workbook.write("#{self.root_dir}/concurrent_summary_#{now}.xlsx")
     end
 
     def call
