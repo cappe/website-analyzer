@@ -3,6 +3,7 @@ namespace :analyzer do
   task run: :environment do
     name = ENV['name']
     url = ENV['url']
+    strategy = ENV['strategy']
 
     unless name
       puts "name is missing, exiting...".red
@@ -14,10 +15,17 @@ namespace :analyzer do
       exit
     end
 
-    runner = LighthouseReporter::ConcurrentRunner.new(
-      url: url,
-      website: name
-    )
+    unless strategy
+      puts "strategy is missing, exiting...".red
+      exit
+    end
+
+    runner = LighthouseReporter
+               .const_get("#{strategy.to_s.camelcase}Runner")
+               .new(
+                 url: url,
+                 website: name
+               )
 
     LighthouseReporter.call(
       runner: runner

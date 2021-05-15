@@ -26,6 +26,7 @@ services:
       - RAILS_ENV=development
       - RAILS_DB_HOST=local-db
       - REDIS_URL=redis://redis:6379/12
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
     volumes:
       - ./app:/usr/src
     ports:
