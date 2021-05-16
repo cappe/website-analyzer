@@ -18,7 +18,8 @@ RUN gem install zeus -v 0.15.15.pre
 
 # Yarn + Lighthouse Batch
 RUN npm install --global yarn
-RUN yarn global add lighthouse lighthouse-batch lighthouse-batch-parallel
+RUN yarn global add lighthouse lighthouse-batch lighthouse-batch-parallel@1.0.15
+RUN cd /usr/local/share/.config/yarn/global/node_modules/lighthouse-batch-parallel && yarn install
 
 # Set the workdir inside the container
 WORKDIR /usr/src

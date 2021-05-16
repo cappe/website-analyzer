@@ -4,12 +4,12 @@ class LighthouseReporter
 
     attr_accessor :root_dir,
                   :dest_dir,
-                  :sitemap
+                  :workers
 
-    def initialize(root_dir:, sitemap:)
+    def initialize(root_dir:, workers:)
       self.root_dir = root_dir
-      self.dest_dir = "#{root_dir}/parallel_reports"
-      self.sitemap = sitemap
+      self.dest_dir = root_dir
+      self.workers = workers
 
       unless Dir.exist?(self.dest_dir)
         FileUtils.mkdir_p(self.dest_dir)
@@ -25,14 +25,25 @@ class LighthouseReporter
     # -l          ||  --log-mode                { Log progress of process }
     # -e          ||  --error-log-file          { Output error log file}
     def command
+      # params = {
+      #   sitemap: self.sitemap,
+      #   dest_dir: self.dest_dir,
+      #   output: 'summary.json',
+      # }.map { |key, val| "#{key.to_s.camelcase(:lower)}=#{val}" }
+      #  .join(' ')
+      #
+      # command = "node #{Rails.root}/lighthouse-parallel-runner.js #{params}"
+      # puts "Running system command #{command}".blue
+      # command
+
       params = [
         "--path #{dest_dir}",
-        # "--audits-config #{root_dir}/config.json",
         "--file-name summary.json",
         "--output-format jsObject",
-        "--number 10",
+        "--number #{workers}",
         "--log-mode",
-        self.sitemap # The input file has to be the last one
+        "#{root_dir}/sitemap.json",
+        "--audits-config #{Rails.root}/config/lighthouse_runner_config.json"
       ].join(" ")
 
       "lighthouse-batch-parallel #{params}"
@@ -41,10 +52,7 @@ class LighthouseReporter
     def call
       system(command)
       exit_code = $?.exitstatus
-
       raise "exit #{exit_code}" unless exit_code == 0
-
-      self.dest_dir
     end
   end
 end

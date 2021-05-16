@@ -19,7 +19,6 @@ class LighthouseReporter
       end.to_json
 
       File.open(dest_path, 'w') { |f| f.puts(json_urls) }
-      dest_path
     end
   end
 end

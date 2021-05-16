@@ -2,12 +2,10 @@ class LighthouseReporter
   class ConcurrentAnalyzer
     include Callable
 
-    attr_accessor :sitemap,
-                  :dest_dir
+    attr_accessor :dest_dir
 
-    def initialize(root_dir:, sitemap:)
-      self.dest_dir = "#{root_dir}/concurrent_reports"
-      self.sitemap = sitemap
+    def initialize(root_dir:)
+      self.dest_dir = root_dir
 
       unless Dir.exist?(self.dest_dir)
         FileUtils.mkdir_p(self.dest_dir)
@@ -15,16 +13,13 @@ class LighthouseReporter
     end
 
     def command
-      "lighthouse-batch -v -f #{sitemap} -o #{dest_dir}"
+      "lighthouse-batch -f #{root_dir}/sitemap.txt -o #{dest_dir}"
     end
 
     def call
       system(command)
       exit_code = $?.exitstatus
-
       raise "exit #{exit_code}" unless exit_code == 0
-
-      self.dest_dir
     end
   end
 end

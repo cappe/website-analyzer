@@ -27,6 +27,7 @@ services:
       - RAILS_DB_HOST=local-db
       - REDIS_URL=redis://redis:6379/12
       - PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+      - NODE_PATH=/usr/local/share/.config/yarn/global/node_modules
     volumes:
       - ./app:/usr/src
     ports:

@@ -12,7 +12,6 @@ class LighthouseReporter
 
     def write(urls)
       File.open(dest_path, 'w') { |f| f.puts(urls) }
-      dest_path
     end
   end
 end

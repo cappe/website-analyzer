@@ -2,12 +2,15 @@ class LighthouseReporter
   class ParallelRunner
     attr_accessor :url,
                   :website,
-                  :root_dir
+                  :root_dir,
+                  :workers
 
-    def initialize(url:, website:)
+    def initialize(url:, website:, **options)
       self.url = url
       self.website = website
-      self.root_dir = "#{Rails.root}/websites/#{website}"
+      self.root_dir = "#{Rails.root}/websites/#{website}/#{DateTime.now.strftime('%d_%m_%Y_%H:%M')}/parallel"
+      # self.root_dir = "#{Rails.root}/websites/#{website}/16_05_2021_14:38/parallel"
+      self.workers = options[:workers]
 
       unless Dir.exist?(self.root_dir)
         FileUtils.mkdir_p(self.root_dir)
@@ -16,26 +19,20 @@ class LighthouseReporter
 
     def call
       puts "Saving sitemaps...".blue
-
-      sitemap = SaveSitemap.call(
+      SaveSitemap.call(
         url: url,
         root_dir: root_dir,
         sitemap_format: :json
       )
 
-      # sitemap = "#{self.root_dir}/sitemap.json"
-
       puts "Running Lighthouse...".blue
-      reports_dir = ParallelAnalyzer.call(
-        sitemap: sitemap,
-        root_dir: root_dir
+      ParallelAnalyzer.call(
+        root_dir: root_dir,
+        workers: workers
       )
 
-      # reports_dir = "#{root_dir}/parallel_reports"
-
-      # puts "Writing Excel...".blue
+      puts "Writing Excel...".blue
       WriteParallelSummaryReport.call(
-        reports_dir: reports_dir,
         root_dir: root_dir
       )
 

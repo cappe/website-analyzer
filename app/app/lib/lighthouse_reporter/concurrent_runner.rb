@@ -4,10 +4,11 @@ class LighthouseReporter
                   :website,
                   :root_dir
 
-    def initialize(url:, website:)
+    def initialize(url:, website:, **options)
       self.url = url
       self.website = website
-      self.root_dir = "#{Rails.root}/websites/#{website}"
+      # self.root_dir = "#{Rails.root}/websites/#{website}/#{DateTime.now.strftime('%d_%m_%Y_%H:%M')}/concurrent"
+      self.root_dir = "#{Rails.root}/websites/#{website}/16_05_2021_14:47/concurrent"
 
       unless Dir.exist?(self.root_dir)
         FileUtils.mkdir_p(self.root_dir)
@@ -16,7 +17,6 @@ class LighthouseReporter
 
     def call
       puts "Saving sitemaps...".blue
-
       sitemap = SaveSitemap.call(
         url: url,
         root_dir: root_dir,
@@ -24,14 +24,13 @@ class LighthouseReporter
       )
 
       puts "Running Lighthouse...".blue
-      reports_dir = ConcurrentAnalyzer.call(
+      ConcurrentAnalyzer.call(
         sitemap: sitemap,
         root_dir: root_dir
       )
 
       puts "Writing Excel...".blue
       WriteConcurrentSummaryReport.call(
-        reports_dir: reports_dir,
         root_dir: root_dir
       )
 

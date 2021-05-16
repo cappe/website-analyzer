@@ -7,8 +7,7 @@ class LighthouseReporter
 
     attr_accessor :workbook,
                   :worksheet,
-                  :root_dir,
-                  :reports_dir
+                  :root_dir
 
     HEADER_ROW = 0
     URL_COL = 0
@@ -26,27 +25,18 @@ class LighthouseReporter
     CLS_GOOD_THRESHOLD = 0.1
     CLS_SATISFACTORY_THRESHOLD = 0.15
 
-    def initialize(root_dir:, reports_dir:)
+    def initialize(root_dir:)
       self.workbook = RubyXL::Workbook.new
       self.worksheet = workbook[0]
       self.root_dir = root_dir
-      self.reports_dir = reports_dir
     end
 
     def summary_json_path
-      "#{self.reports_dir}/summary.json"
+      "#{self.root_dir}/summary.json"
     end
 
-    def page_summary_json_path(page)
-      "#{self.reports_dir}/#{page}"
-    end
-
-    # Caches queries by parameter (page)
-    def page_summary_json(page)
-      @page_summaries ||= Hash.new do |h, key|
-        h[key] = JSON.parse(File.read(key))
-      end
-      @page_summaries[page_summary_json_path(page)]
+    def page_summary(page)
+      JSON.parse(File.read("#{self.root_dir}/#{page}"))
     end
 
     def rows
@@ -108,27 +98,42 @@ class LighthouseReporter
       OK_FONT_COLOR
     end
 
+    def get_metrics(page)
+      metrics = page['detail']
+      page_summary = page_summary(page['file'])
+      cls = page_summary['audits']['cumulative-layout-shift']['displayValue'].to_f
+
+      {
+        performance: metrics['performance'].to_f,
+        accessibility: metrics['accessibility'].to_f,
+        best_practices: metrics['best-practices'].to_f,
+        seo: metrics['seo'].to_f,
+        pwa: metrics['pwa'].to_f,
+        cls: cls.to_f
+      }
+    end
+
     def write_rows
       min_col_widths = {}
 
       self.rows.each_with_index do |page, idx|
         row = idx + 1
+        page_url = page['url'] || page['URL'] # concurrent has url, parallel has URL
 
-        worksheet.add_cell(row, URL_COL, page['url'])
+        worksheet.add_cell(row, URL_COL, page_url)
 
         begin
-          metrics = page['detail']
-          performance = metrics['performance']
-          accessibility = metrics['accessibility']
-          best_practices = metrics['best-practices']
-          seo = metrics['seo']
-          pwa = metrics['pwa']
-
-          page_summary = page_summary_json(page['file'])
-          cls = page_summary['audits']['cumulative-layout-shift']['displayValue'].to_f
-          # byebug
+          metrics = get_metrics(page)
+          performance = metrics[:performance]
+          accessibility = metrics[:accessibility]
+          best_practices = metrics[:best_practices]
+          seo = metrics[:seo]
+          pwa = metrics[:pwa]
+          cls = metrics[:cls]
         rescue Exception => e
-          puts "error: #{page['url']}".red
+          puts "==================".red
+          puts "error: #{e}".red
+          puts "url: #{page_url}".red
 
           worksheet.add_cell(row, ERROR_COL, 'error')
 
