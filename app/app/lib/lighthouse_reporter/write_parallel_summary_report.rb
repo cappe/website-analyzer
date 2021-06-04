@@ -12,7 +12,8 @@ class LighthouseReporter
         best_practices: metrics['best-practices']['score'].to_f,
         seo: metrics['seo']['score'].to_f,
         pwa: metrics['pwa']['score'].to_f,
-        cls: metrics['cumulative-layout-shift']['score'].to_f
+        cls: metrics['cumulative-layout-shift']['score'].to_f,
+        lcp: metrics['largest-contentful-paint']['score'].to_f
       }
     end
 

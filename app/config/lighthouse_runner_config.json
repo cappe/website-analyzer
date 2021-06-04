@@ -1,3 +1,4 @@
 {
-  "cumulative-layout-shift": "Cumulative Layout Shift"
+  "cumulative-layout-shift": "Cumulative Layout Shift",
+  "largest-contentful-paint": "Largest Contentful Paint"
 }

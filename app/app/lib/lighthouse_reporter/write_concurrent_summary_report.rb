@@ -11,7 +11,10 @@ class LighthouseReporter
 
     HEADER_ROW = 0
     URL_COL = 0
-    ERROR_COL = 7
+
+    LCP_COL = 7
+    ERROR_COL = 8
+
     OK_FONT_COLOR = '0C5100'
     OK_BG_COLOR = 'BDEDC4'
     SATISFACTORY_FONT_COLOR = '8A4504'
@@ -24,6 +27,9 @@ class LighthouseReporter
 
     CLS_GOOD_THRESHOLD = 0.1
     CLS_SATISFACTORY_THRESHOLD = 0.15
+
+    LCP_GOOD = 2.5
+    LCP_NEEDS_IMPROVEMENT = 4
 
     def initialize(root_dir:)
       self.workbook = RubyXL::Workbook.new
@@ -51,6 +57,7 @@ class LighthouseReporter
       worksheet.add_cell(HEADER_ROW, 4, 'SEO')
       worksheet.add_cell(HEADER_ROW, 5, 'PWA')
       worksheet.add_cell(HEADER_ROW, 6, 'CLS')
+      worksheet.add_cell(HEADER_ROW, LCP_COL, 'LCP')
 
       worksheet.change_column_width(1, DEFAULT_COL_WIDTH)
       worksheet.change_column_width(2, DEFAULT_COL_WIDTH)
@@ -58,6 +65,7 @@ class LighthouseReporter
       worksheet.change_column_width(4, DEFAULT_COL_WIDTH)
       worksheet.change_column_width(5, DEFAULT_COL_WIDTH)
       worksheet.change_column_width(6, DEFAULT_COL_WIDTH)
+      worksheet.change_column_width(LCP_COL, DEFAULT_COL_WIDTH)
 
       worksheet[HEADER_ROW][0].change_font_bold(true)
       worksheet[HEADER_ROW][1].change_font_bold(true)
@@ -66,6 +74,7 @@ class LighthouseReporter
       worksheet[HEADER_ROW][4].change_font_bold(true)
       worksheet[HEADER_ROW][5].change_font_bold(true)
       worksheet[HEADER_ROW][6].change_font_bold(true)
+      worksheet[HEADER_ROW][7].change_font_bold(true)
     end
 
     # Good - nothing to do here = CLS of 0.1 or less.
@@ -76,6 +85,18 @@ class LighthouseReporter
       return OK_BG_COLOR if v <= CLS_GOOD_THRESHOLD
       return SATISFACTORY_BG_COLOR if v <= CLS_SATISFACTORY_THRESHOLD
       UNACCEPTABLE_BG_COLOR
+    end
+
+    def get_lcp_bg_color(v)
+      return OK_BG_COLOR if v <= LCP_GOOD
+      return SATISFACTORY_BG_COLOR if v <= LCP_NEEDS_IMPROVEMENT
+      UNACCEPTABLE_BG_COLOR
+    end
+
+    def get_lcp_font_color(v)
+      return OK_FONT_COLOR if v <= LCP_GOOD
+      return SATISFACTORY_FONT_COLOR if v <= LCP_NEEDS_IMPROVEMENT
+      UNACCEPTABLE_FONT_COLOR
     end
 
     def get_cls_font_color(v)
@@ -130,6 +151,7 @@ class LighthouseReporter
           seo = metrics[:seo]
           pwa = metrics[:pwa]
           cls = metrics[:cls]
+          lcp = metrics[:lcp] rescue nil
         rescue Exception => e
           puts "==================".red
           puts "error: #{e}".red
@@ -163,6 +185,10 @@ class LighthouseReporter
         worksheet.add_cell(row, 6, cls)
         worksheet[row][6].change_fill(get_cls_bg_color(cls))
         worksheet[row][6].change_font_color(get_cls_font_color(cls))
+
+        worksheet.add_cell(row, LCP_COL, lcp)
+        worksheet[row][LCP_COL].change_fill(get_lcp_bg_color(lcp))
+        worksheet[row][LCP_COL].change_font_color(get_lcp_font_color(lcp))
 
         # Auto-resize URL col
         url_cell_content = worksheet[row][URL_COL]&.value
