@@ -4,9 +4,11 @@ require 'rubyXL/convenience_methods'
 class LighthouseReporter
   class WriteParallelSummaryReport < WriteConcurrentSummaryReport
     def get_metrics(page)
+      device = page['Device']
       metrics = page['audits']
 
       {
+        device: device,
         performance: metrics['performance']['score'].to_f,
         accessibility: metrics['accessibility']['score'].to_f,
         best_practices: metrics['best-practices']['score'].to_f,
